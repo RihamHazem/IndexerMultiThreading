@@ -1,0 +1,27 @@
+//get words in certain html tags
+<!DOCTYPE htlm>
+<html>
+	<head>
+
+	</head>
+	<body>
+		<p>just a test to detect the number of non stopping words</p>
+		<p>trying to count all the words in any html tag and know know knwo the tags belonging to each tag</p>
+		<h1>heading of Topics related to chemistry</h1>
+		<p>chemistry , biology, mathematics, physics</p>
+		<p>end of html document</p>
+		<a href="https://www.w3schools.com">Visit W3Schools.com! tag tag tag</a>
+		<button onclick="myFunction()">Try it</button>
+		<h2 id="demo"></h2>
+		<script>
+			function myFunction() {
+				var x = document.getElementsByTagName("P");
+				document.getElementById("demo").innerHTML = x[2].innerHTML;
+				document.getElementById("demo").innerHTML = x.length;
+				for (i = 0; i < x.length; i++) { 
+					window.alert(x[i].innerHTML);
+				}
+			}tag
+		</script>
+	</body>
+</html>
