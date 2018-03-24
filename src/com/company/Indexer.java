@@ -1,93 +1,97 @@
 package com.company;
 
 import javafx.util.Pair;
+import org.bson.Document;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.*;
+import org.tartarus.snowball.ext.spanishStemmer;
 
 public class Indexer extends Thread {
     public ArrayList<Pair<String, Long>> urls = new ArrayList<>();
     public ArrayList<String> addresses = new ArrayList<>();
+    private MyDB mydb = new MyDB();
+
+    private Map<String, Object> page = new HashMap<>();
+
     public void run() {
         int i = 0;
         for (Pair<String, Long> url : urls) {
-            work(url.getKey(), url.getValue(), addresses.get(i++));
+            try {
+                work(url.getKey(), url.getValue(), addresses.get(i++));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private void work(String currentDoc, float docLen, String address) {
+    public void work(String currentDoc, float docLen, String address) throws IOException {
         //EXTRACTING THE WORDS FROM HTML DOC
         ListLinks l = new ListLinks();
-        try {
-            l.work(currentDoc);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-
+        ArrayList<String> originalWords = new ArrayList<>();
+        originalWords = l.work(currentDoc);
 
         //STOP WORDS PROCESSING
         stopWords sw = new stopWords();
-        sw.work("in.txt", "in2.txt");
-
-        System.out.println("\n\n");
+        ArrayList<String> nonStopWords = sw.work(originalWords);
 
         //STEMMING
         Stemmer stm = new Stemmer();
-        stm.work("in2.txt", "out.txt");
-        MyDB mydb = new MyDB();
-        //DB PART
-        try {
-            BufferedReader in = new BufferedReader(new FileReader("out.txt"));//stemmed words
-            BufferedReader in2 = new BufferedReader(new FileReader("in2.txt"));//original words
+        ArrayList<String> stemmedWords = stm.work(nonStopWords);
+        //////////////////////////////////////////////
+       String originalWord, stopWord;
+       for(int i = 0; i < stemmedWords.size(); i++) {
+           originalWord = nonStopWords.get(i);
+           stopWord = stemmedWords.get(i);
 
-            //////////////////////////////////////////////
-            String s, s2;
-            while ((s = in.readLine()) != null) {
-                s2 = in2.readLine();//original
+            int k = originalWord.indexOf('-');
+            String position = originalWord.substring(k + 1);
 
-                int i = s2.indexOf('-');
-                String position = s2.substring(i + 1);
+            String[] arr = stopWord.split("-");//stemmed
+            String[] arr2 = originalWord.split("-");//original
 
-                String[] arr = s.split("-");//stemmed
-                String[] arr2 = s2.split("-");//original
-                System.out.println(arr[0]);
-                if (!mydb.checkWord(arr[0])) {
-                    System.out.println("WORD not FOUND IN DB! call insertNewWord");
-                    //INSERTION
-                    mydb.insertNewWord(arr[0], arr2[0], address, position, docLen);
-                } else {
-                    System.out.println("WORD FOUND IN DB! continue checking");
-                    //CHECK WORD AND URL EXISTANCE
-                    if (!mydb.checkWordDoc(arr[0], address)) {
-                        System.out.println("WORD FOUND and URL not FOUND IN DB!");
-                        //CALL APPEND ARRAY OF DOCS
-                        mydb.insertNewDoc(arr[0], arr2[0], address, position, docLen);
-                    } else {
-                        System.out.println("WORD FOUND and URL FOUND IN DB! continue checking");
-                        //CHECK WORD AND URL AND SYNO EXIST
-                        if (!mydb.checkWordDocSyno(arr[0], address, arr2[0])) {
-
-                            System.out.println("WORD FOUND and URL FOUND and SYNO not FOUND IN DB!");
-                            //APPEDN SYNOS
-                            mydb.insertNewSyno(arr[0], arr2[0], address, position, docLen);
-                        } else {
-                            System.out.println("WORD FOUND and URL FOUND and SYNO FOUND IN DB!");
-                            //APPEND POSITIONS, INCREASE COUNT
-                            mydb.insertNewPos(arr[0], arr2[0], address, position, docLen);
-                        }
-
-                    }
-
-                }
+            if(arr[0].length() == 0) {
+                continue;
             }
-            in.close();
-            in2.close();
-        } catch (IOException e) {
-            System.out.println("Error!");
+            Map<String, Object> elem = (HashMap<String, Object>) page.get(arr[0]);
+            if (elem == null) {
+                //INSERTION
+                Map<String, Object> myMap = new HashMap<>();
+                ArrayList<String> pos = new ArrayList<>();
+                pos.add(position);
+
+                myMap.put(arr2[0], pos);
+                page.put(arr[0], myMap);
+
+            } else {
+
+                ArrayList<String> pos = (ArrayList<String>) elem.get(arr2[0]);
+                if (pos == null) {
+                    pos = new ArrayList<>();
+                    pos.add(position);
+                    elem.put(arr2[0], pos);
+                } else {
+                    pos.add(position);
+                    elem.put(arr2[0], pos);
+                }
+
+            }
         }
-        System.out.println("ALL DONE!");
-        //mydb.removeURL("www.fb.com");
+        printPage();
+        Map<String, Object> finalMap = new HashMap<String, Object>();
+        finalMap.put("URL", "index.html");
+        finalMap.put("words", page);
+        mydb.collection.insertOne(new Document(finalMap));
+    }
+
+    void updatePage(String address) throws IOException {
+        mydb.removeURL(address);
+//        work(address, 1000, address);
+    }
+
+    void printPage() {
+//        System.out.println(page);
     }
 }

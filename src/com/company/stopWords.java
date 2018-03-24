@@ -1,5 +1,6 @@
 package com.company;
 import java.io.*;
+import java.util.ArrayList;
 
 public class stopWords {
     public static Boolean step0(String s) {
@@ -14,28 +15,18 @@ public class stopWords {
         return false;
     }
 
-    public void work(String path1, String path2) {
-        try {
-            BufferedReader in = new BufferedReader(new FileReader("in.txt"));
-            File outFile = new File("in2.txt");
-            if (!outFile.exists()) {
-                outFile.createNewFile();
+    public ArrayList<String> work(ArrayList<String> words) {
+//            BufferedReader in = new BufferedReader(new FileReader("in.txt"));
+//            File outFile = new File("in2.txt");
+//            BufferedWriter bw = new BufferedWriter(new FileWriter(outFile));
+        ArrayList<String> nonStopWords = new ArrayList<>();
+        //////////////////////////////////////////////
+        for (String s: words) {
+            String[] arr = s.split("-");
+            if (!(stopWords.step0(arr[0].toLowerCase()))) {
+                nonStopWords.add(s.toLowerCase());
             }
-            BufferedWriter bw = new BufferedWriter(new FileWriter(outFile));
-            //////////////////////////////////////////////
-            String s = "";
-            while ((s = in.readLine()) != null) {
-                String[] arr = s.split("-");
-                if (!(stopWords.step0(arr[0].toLowerCase()))) {
-                    System.out.println(s);
-                    bw.write(s.toLowerCase());
-                    bw.newLine();
-                }
-            }
-            in.close();
-            bw.close();
-        } catch (IOException e) {
-            System.out.println("Error!");
         }
+        return nonStopWords;
     }
 }

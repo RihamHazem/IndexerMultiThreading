@@ -8,9 +8,10 @@ import org.jsoup.select.Elements;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 public class ListLinks {
-    public void work(String html) throws IOException {
+    public ArrayList<String> work(String html) throws IOException {
         Document doc = Jsoup.parse(html);
         Elements links = doc.select("a[href]");
         Elements paragraphs = doc.select("p");
@@ -18,66 +19,62 @@ public class ListLinks {
         Elements imports = doc.select("link[href]");
         Elements headers = doc.select("h2,h1");
         int counter=0, spaceCnt=0;
-//        print(doc.toString());
-        print("\nParagraphs: (%d)", paragraphs.size());
-
-        PrintWriter writer = new PrintWriter("in.txt", "UTF-8");
-        System.out.print("printing the words in each paragraph\n");
+        ArrayList<String> words = new ArrayList<>();
         for (Element p1 : paragraphs) {
-            print("* p: %s ", trim(p1.text(), 100));
             String PText = p1.text();
 
-
+            StringBuilder word = new StringBuilder();
             for(int i=0;i<PText.length();i++)
             {
                 if(((PText.charAt(i)>='a' && PText.charAt(i)<='z') || (PText.charAt(i)>='A' && PText.charAt(i)<='Z')))
                 {
-                    System.out.print(PText.charAt(i));
-                    writer.print(PText.charAt(i));
+                    word.append(PText.charAt(i));
                     spaceCnt=0;
                 }
                 else if(spaceCnt == 0)
                 {
-                    writer.println("-"+counter+"-p");
-                    System.out.println("-"+counter+"-p");
+                    word.append("-"+counter+"-p");
+                    words.add(word.toString());
+                    word.setLength(0);
                     spaceCnt++;
                     counter++;
                 }
             }
-            writer.println("-"+counter+"-p");
-            System.out.println("-"+counter+"-p");
+            word.append("-"+counter+"-p");
+            words.add(word.toString());
+            word.setLength(0);
             counter++;
         }
 
-        print("\nheaders: (%d)", headers.size());
+//        print("\nheaders: (%d)", headers.size());
 
-        System.out.print("printing the words in each header\n");
         for (Element h1 : headers) {
-            print("* H: %s ", trim(h1.text(), 100));
+//            print("* H: %s ", trim(h1.text(), 100));
             String HText = h1.text();
 
-
+            StringBuilder word = new StringBuilder();
             for(int i=0;i<HText.length();i++)
             {
                 if(((HText.charAt(i)>='a' && HText.charAt(i)<='z') || (HText.charAt(i)>='A' && HText.charAt(i)<='Z')))
                 {
-                    System.out.print(HText.charAt(i));
-                    writer.print(HText.charAt(i));
+                    word.append(HText.charAt(i));
                     spaceCnt=0;
                 }
                 else if(spaceCnt == 0)
                 {
-                    writer.println("-"+counter+"-h");
-                    System.out.println("-"+counter+"-h");
+                    word.append("-"+counter+"-h");
+                    words.add(word.toString());
+                    word.setLength(0);
                     spaceCnt++;
                     counter++;
                 }
             }
-            writer.println("-"+counter+"-h");
-            System.out.println("-"+counter+"-h");
+            word.append("-"+counter+"-h");
+            words.add(word.toString());
+            word.setLength(0);
             counter++;
         }
-        writer.close();
+        return words;
     }
 
 
